@@ -8,6 +8,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// ✅ Home Route (Fix for "Cannot GET /")
+app.get('/', (req, res) => {
+  res.send("Quiz Backend Running Successfully 🚀");
+});
+
 // Connect to MongoDB
 const connectDB = require('./db');
 connectDB();
