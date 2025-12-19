@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const http = require('http'); // Needed for Socket.io
+const { Server } = require('socket.io');
 
 dotenv.config();
 
@@ -8,16 +10,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ Home Route (Fix for "Cannot GET /")
+// Home route
 app.get('/', (req, res) => {
   res.send("Quiz Backend Running Successfully 🚀");
 });
 
-// Connect to MongoDB
+// MongoDB connection
 const connectDB = require('./db');
 connectDB();
 
-// Routes
+// API routes
 const questionsRouter = require('./routes/questions');
 app.use('/api/questions', questionsRouter);
 
@@ -45,6 +47,29 @@ app.post('/api/grade', async (req, res) => {
   }
 });
 
+// ✅ Wrap app in HTTP server for Socket.io
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: '*', // Allow your frontend URL
+    methods: ['GET', 'POST'],
+  },
+});
+
+io.on('connection', (socket) => {
+  console.log('New client connected:', socket.id);
+
+  // Example event
+  socket.on('message', (data) => {
+    console.log('Received:', data);
+    socket.emit('message', `Server got: ${data}`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
+
 // Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
